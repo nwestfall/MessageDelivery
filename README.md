@@ -5,7 +5,7 @@ TODO: Icons
 MessageDelivery is designed to help manage messages across many FIFO SQS in AWS.  Sometimes you have a use case where you need many difference queues, all while being FIFO.  If you want to do this with a serverless approach, it's currently not possible.  Running Lambda from a message in SQS is only supported if the queue is not FIFO.  This project is meant to run in ECS/EKS (or really wherever, it is just a docker image) and manage the processing of messages across all these queues by spinning up other containers in ECS (future support for EKS is being considered).  This allows you to have many different queues, but not require leaving on a bunch of docker images if you don't need to.
 
 ## How it works
-You configure the MessageDelivery docker image to support your AWS environment.  You can do this by using environment variables when starting the image.
+You configure the `MessageDelivery` docker image to support your AWS environment.  You can do this by using environment variables when starting the image.
 
 Once the image is running, it will monitor up to 1000 FIFO SQS queues.  If at any time the message threshold is higher than what you have configured (default: 1), then it will spin up a docker container in ECS using the task definition and cluster you have defined.  It will then check back into this queue later.  Once the queue reaches 0 messages and 0 messages in flight, it will stop the container in ECS.
 
@@ -44,6 +44,11 @@ If your `VALUE` contains `:`, please be sure to wrap the value in quotes (`"VAL:
 This example shows how to pull `Tags` from the queue and use them as or in your environment variables.  You can do this by defining `##MessageDelivery.Tag.YOUR_TAG_KEY##` anywhere in the value.  Note that it is case-sensitive, including the tag key.
 
 **If the tag cannot be found, it will put a blank string as the default value**
+
+## Example
+They way I have configured, is I have an EC2 ECS cluster running in AWS.  I then created a task definition for `MessageDelivery` with my configuration.  I run this definition as a `Service` inside the cluster.  This way, `MessageDelivery` is always running and will start other tasks inside the cluster when appropiate.
+
+![AWS Example](example.gif)
 
 ## Future Development
  - Have a web-based dashboard to see what you are monitoring and when tasks are started/stopped
