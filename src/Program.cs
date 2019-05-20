@@ -123,12 +123,21 @@ namespace MessageDelivery
                             var runTaskResponse = await _ecsClient.RunTaskAsync(ecsRunTaskRequest, token);
                             if(runTaskResponse.HttpStatusCode == HttpStatusCode.OK)
                             {
-                                Console.WriteLine($"{runTaskResponse.Tasks.Count} tasks running for {queueUrl}");
-                                foreach(var task in runTaskResponse.Tasks)
+                                if(runTaskResponse.Failures.Count > 0)
                                 {
-                                    _runningECSTasks.Add(queueUrl, task);
+                                    Console.WriteLine($"Unable to start task on ECS! ({queueUrl}) - {runTaskResponse.Failures.FirstOrDefault().Reason}");
                                 }
-                                ecsStarted = true;
+                                else if(runTaskResponse.Tasks.Count > 0)
+                                {
+                                    Console.WriteLine($"{runTaskResponse.Tasks.Count} tasks running for {queueUrl}");
+                                    foreach(var task in runTaskResponse.Tasks)
+                                    {
+                                        _runningECSTasks.Add(queueUrl, task);
+                                    }
+                                    ecsStarted = true;
+                                }
+                                else
+                                    Console.WriteLine($"Unable to start task on ECS! ({queueUrl})");
                             }
                             else
                                 Console.WriteLine($"Unable to start task on ECS! ({queueUrl})");
