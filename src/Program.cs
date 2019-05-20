@@ -49,12 +49,6 @@ namespace MessageDelivery
             sqsClient.ExceptionEvent += AmazonClient_ExceptionEvent;
             _sqsClient = sqsClient;
 
-            // TODO Wire up configs
-            //_ecsTaskEnvironmentVariableOverride.Add("Traversa:TenantId", "##MessageDelivery.Tag.tenantId##");
-            //_ecsTaskEnvironmentVariableOverride.Add("ConnectionStrings:TraversaCoreDbConnection", "Server=120.0.5.4;Database=##MessageDelivery.Tag.appName##Core;User ID=dockeruser;Password=TempPass123");
-            //_ecsTaskEnvironmentVariableOverride.Add("ConnectionStrings:TraversaGISDbConnection", "Server=120.0.5.4;Database=##MessageDelivery.Tag.appName##GPS;User ID=dockeruser;Password=TempPass123");
-            //_ecsTaskEnvironmentVariableOverride.Add("AWS_LOGGING_GROUP_NAME", "##MessageDelivery.Tag.appName##");
-
             do
             {
                 try
