@@ -46,7 +46,7 @@ This example shows how to pull `Tags` from the queue and use them as or in your 
 **If the tag cannot be found, it will put a blank string as the default value**
 
 ## Example
-They way I have configured, is I have an EC2 ECS cluster running in AWS.  I then created a task definition for `MessageDelivery` with my configuration.  I run this definition as a `Service` inside the cluster.  This way, `MessageDelivery` is always running and will start other tasks inside the cluster when appropiate.
+I have an EC2 ECS cluster running in AWS.  I then created a task definition for `MessageDelivery` with my configuration.  I run this definition as a `Service` inside the cluster.  This way, `MessageDelivery` is always running and will start other tasks inside the cluster when appropiate.
 
 ![AWS Example](example.gif)
 

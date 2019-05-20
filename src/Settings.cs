@@ -71,20 +71,34 @@ namespace MessageDelivery
         {
             // ? Format - ENV_VARIABLE=VALUE:OTHER_ENV_VARIABLE=OTHER_VALUE
             var environmentDictionary = new Dictionary<string, string>();
-            var parts = Regex.Matches(environmentVariableOverrides, @"[\""].+?[\""]|[^:]+");
+            var parts = Regex.Matches(environmentVariableOverrides, "'(.+?)'|[^:]+");
             if(parts.Count == 0)
                 throw new ArgumentException("MD_ECS_TASK_CONTAINER_ENVIRONMENT is formatted incorrectly");
             for(var i = 0; i < parts.Count; i++)
             {
                 var part = parts[i];
-                var variables = Regex.Matches(part.Value, @"[\""].+?[\""]|[^=]+");
+                var variables = Regex.Matches(GetCorrectMatch(ref part), "\"(.+?)\"|[^=]+");
                 if(variables.Count > 2)
                     throw new ArgumentException("MD_ECS_TASK_CONTAINER_ENVIRONMENT is formatted incorrectly");
-                if(!environmentDictionary.TryAdd(variables[0].Value, variables[1].Value))
+                var key = variables[0];
+                var val = variables[1];
+                if(!environmentDictionary.TryAdd(GetCorrectMatch(ref key), GetCorrectMatch(ref val)))
                     throw new ArgumentException("Environment Variable already defined in overrides");
             }
 
             ECSTaskEnvironmentVariableOverride = environmentDictionary;
+        }
+
+        static string GetCorrectMatch(ref Match match)
+        {
+            var matchString = match.Value;
+            if(match.Groups.Count == 2)
+            {
+                if(!string.IsNullOrEmpty(match.Groups[1].Value))
+                    matchString = match.Groups[1].Value;
+            }
+
+            return matchString;
         }
     }
 }
