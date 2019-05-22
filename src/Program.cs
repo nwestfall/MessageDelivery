@@ -87,9 +87,44 @@ namespace MessageDelivery
                 try
                 {
                     bool ecsStarted = false;
-                    var attributes = await _sqsClient.GetQueueAttributesAsync(queueUrl, _desiredAttributes, token);
+                    var attributes = await _sqsClient.GetQueueAttributesAsync(queueUrl, _desiredAttributes, token).ConfigureAwait(false);
                     if(attributes.HttpStatusCode == HttpStatusCode.OK)
                     {
+                        if(attributes.ApproximateNumberOfMessages >= Settings.MessageThreshold
+                                && _runningECSTasks.ContainsKey(queueUrl))
+                        {
+                            Console.WriteLine($"ECS Task is already running for {queueUrl}.  Confirming...");
+                            ecsStarted = true;
+                            var task = _runningECSTasks[queueUrl];
+                            var taskResponse = await _ecsClient.DescribeTasksAsync(new DescribeTasksRequest
+                            {
+                                Cluster = task.ClusterArn,
+                                Tasks = new List<string>() { task.TaskArn }
+                            }, token).ConfigureAwait(false);
+                            if(taskResponse.HttpStatusCode == HttpStatusCode.OK)
+                            {
+                                if(taskResponse.Failures.Count > 0)
+                                    Console.WriteLine($"Unable to get task definition for {task.TaskArn} ({queueUrl}) - {taskResponse.Failures.FirstOrDefault().Reason}");
+                                else
+                                {
+                                    var updatedTask = taskResponse.Tasks.FirstOrDefault();
+                                    if(updatedTask != null)
+                                    {
+                                        if(updatedTask.DesiredStatus == "STOPPED")
+                                        {
+                                            _runningECSTasks.Remove(queueUrl);
+                                            ecsStarted = false;
+                                        }
+                                        else
+                                            Console.WriteLine($"Task {task.TaskArn} is desired {updatedTask.DesiredStatus} - ({queueUrl})");
+                                    }
+                                    else
+                                        Console.WriteLine($"Unable to get updated task information for {task.TaskArn} ({queueUrl})");
+                                }
+                            }
+                            else
+                                Console.WriteLine($"Unable to get a task defition for {task.TaskArn} - {taskResponse.HttpStatusCode} ({queueUrl})");;
+                        }
                         if(attributes.ApproximateNumberOfMessages >= Settings.MessageThreshold
                             && !_runningECSTasks.ContainsKey(queueUrl))
                         {
@@ -120,7 +155,7 @@ namespace MessageDelivery
                                 taskOverride.ContainerOverrides = new List<ContainerOverride>() { containerOverride };
                                 ecsRunTaskRequest.Overrides = taskOverride;
                             }
-                            var runTaskResponse = await _ecsClient.RunTaskAsync(ecsRunTaskRequest, token);
+                            var runTaskResponse = await _ecsClient.RunTaskAsync(ecsRunTaskRequest, token).ConfigureAwait(false);
                             if(runTaskResponse.HttpStatusCode == HttpStatusCode.OK)
                             {
                                 if(runTaskResponse.Failures.Count > 0)
@@ -142,12 +177,6 @@ namespace MessageDelivery
                             else
                                 Console.WriteLine($"Unable to start task on ECS! ({queueUrl})");
                         }
-                        else if(attributes.ApproximateNumberOfMessages >= Settings.MessageThreshold
-                                && _runningECSTasks.ContainsKey(queueUrl))
-                        {
-                            Console.WriteLine($"ECS Task is allready running for {queueUrl}");
-                            ecsStarted = true;
-                        }
                         else if(attributes.ApproximateNumberOfMessages == 0 
                                 && attributes.ApproximateNumberOfMessagesNotVisible == 0
                                 && _runningECSTasks.ContainsKey(queueUrl))
@@ -159,7 +188,7 @@ namespace MessageDelivery
                                 Cluster = task.ClusterArn,
                                 Task = task.TaskArn,
                                 Reason = "Message count at 0"
-                            });
+                            }).ConfigureAwait(false);
                             if(stopResponse.HttpStatusCode == HttpStatusCode.OK)
                             {
                                 Console.WriteLine($"Task {task.TaskArn} stopped for {queueUrl}!");
@@ -175,13 +204,13 @@ namespace MessageDelivery
                     if(!ecsStarted)
                     {
                         Console.WriteLine($"Checking {queueUrl} again in {Settings.QueueMessageCountCheckIfBlankInSeconds} seconds");
-                        await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfBlankInSeconds * 1000);
+                        await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfBlankInSeconds * 1000).ConfigureAwait(false);
                         MonitorQueue(queueUrl, token);
                     }
                     else
                     {
                         Console.WriteLine($"Checking {queueUrl} again in {Settings.QueueMessageCountCheckIfActiveInMinutes} minutes");
-                        await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfActiveInMinutes * 60 * 1000);
+                        await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfActiveInMinutes * 60 * 1000).ConfigureAwait(false);
                         MonitorQueue(queueUrl, token);
                     }
                 }
