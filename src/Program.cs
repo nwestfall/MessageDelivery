@@ -64,6 +64,54 @@ namespace MessageDelivery
             {
                 try
                 {
+                    Log.Information("Getting current list of running tasks in cluster");
+                    string nextToken = null;
+                    Dictionary<string, Amazon.ECS.Model.Task> possibleRunningQueues = new Dictionary<string, Amazon.ECS.Model.Task>();
+                    do
+                    {
+                        var tasksResponse = await _ecsClient.ListTasksAsync(new ListTasksRequest()
+                        {
+                            Cluster = Settings.ECSClusterARN,
+                            NextToken = nextToken
+                        }).ConfigureAwait(false);
+                        if(tasksResponse.HttpStatusCode == HttpStatusCode.OK)
+                        {
+                            var taskResponse = await _ecsClient.DescribeTasksAsync(new DescribeTasksRequest()
+                            {
+                                Cluster = Settings.ECSClusterARN,
+                                Tasks = tasksResponse.TaskArns
+                            }).ConfigureAwait(false);
+                            if(taskResponse.HttpStatusCode == HttpStatusCode.OK)
+                            {
+                                if(taskResponse.Failures.Any())
+                                {
+                                    Log.Error($"Unable to get task information cluster: {taskResponse.Failures.FirstOrDefault()?.Reason}");
+                                }
+                                else
+                                {
+                                    foreach(var task in taskResponse.Tasks)
+                                    {
+                                        if(task.StartedBy.StartsWith("MDS", StringComparison.InvariantCultureIgnoreCase) && task.DesiredStatus != "STOPPED")
+                                        {
+                                            Log.Information("Found task running that isn't tracked (probably from previous service)");
+                                            // Found a running task for the queue while number of messages is 0
+                                            possibleRunningQueues.Add(task.StartedBy, task);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Log.Error($"Unable to get task information for cluster");
+                            }
+                        }
+                        else
+                        {
+                            Log.Error("Unable to get tasks from cluster");
+                        }
+                    }
+                    while(!string.IsNullOrEmpty(nextToken));
+
                     Log.Information("Getting list of queues (limit 1000)");
                     var queues = await sqsClient.ListQueuesAsync(Settings.QueuePrefix);
                     CancellationTokenSource monitorCancellationToken = new CancellationTokenSource();
@@ -74,7 +122,17 @@ namespace MessageDelivery
                         Log.Debug($"{fifoQueues.Count} are going to be monitored (the rest aren't FIFO queues)");
                         foreach(var queueUrl in queues.QueueUrls)
                         {
-                            MonitorQueue(queueUrl, true, monitorCancellationToken.Token);
+                            // Get name
+                            string queueName = string.Empty;
+                            var queueUrlParts = queueUrl.Split('/');
+                            queueName = queueUrlParts[queueUrlParts.Length - 1];
+                            if(possibleRunningQueues.Any(p => $"MDS-{queueName}".StartsWith(p.Key)))
+                            {
+                                var taskItem = possibleRunningQueues.FirstOrDefault(p => $"MDS-{queueName}".StartsWith(p.Key));
+                                _runningECSTasks.Add(queueUrl, taskItem.Value);
+                                possibleRunningQueues.Remove(taskItem.Key);
+                            }
+                            MonitorQueue(queueUrl, monitorCancellationToken.Token);
                         }
                     }
 
@@ -90,8 +148,9 @@ namespace MessageDelivery
             } while(true);
         }
 
-        static void MonitorQueue(string queueUrl, bool firstPass, CancellationToken token)
+        static void MonitorQueue(string queueUrl, CancellationToken token)
         {
+            return;
             Log.Information($"Starting monitor for {queueUrl}");
             System.Threading.Tasks.Task.Factory.StartNew(async () =>
             {
@@ -140,63 +199,6 @@ namespace MessageDelivery
                             }
                             else
                                 Log.Error($"Unable to get a task defition for {task.TaskArn} - {taskResponse.HttpStatusCode} ({queueUrl})");;
-                        }
-                        else if(((attributes.ApproximateNumberOfMessages == 0
-                                && attributes.ApproximateNumberOfMessagesNotVisible == 0)
-                                || (attributes.ApproximateNumberOfMessages >= Settings.MessageThreshold))
-                                && !_runningECSTasks.ContainsKey(queueUrl)
-                                && firstPass)
-                        {
-                            string nextToken = null;
-                            do
-                            {
-                                var tasksResponse = await _ecsClient.ListTasksAsync(new ListTasksRequest()
-                                {
-                                    Cluster = Settings.ECSClusterARN,
-                                    NextToken = nextToken
-                                }, token).ConfigureAwait(false);
-                                if(tasksResponse.HttpStatusCode == HttpStatusCode.OK)
-                                {
-                                    var startTag = $"MDS-{queueName}";
-                                    if(startTag.Length > 32)
-                                        startTag = startTag.Substring(0, 32);
-                                    foreach(var taskArn in tasksResponse.TaskArns)
-                                    {
-                                        var taskResponse = await _ecsClient.DescribeTasksAsync(new DescribeTasksRequest()
-                                        {
-                                            Cluster = Settings.ECSClusterARN,
-                                            Tasks = new List<string>() { taskArn }
-                                        }).ConfigureAwait(false);
-                                        if(taskResponse.HttpStatusCode == HttpStatusCode.OK)
-                                        {
-                                            if(taskResponse.Failures.Any())
-                                            {
-                                                Log.Error($"Unable to get task information for {taskArn}: {taskResponse.Failures.FirstOrDefault()?.Reason}");
-                                            }
-                                            else
-                                            {
-                                                var task = taskResponse.Tasks.FirstOrDefault();
-                                                if(task.StartedBy.Equals(startTag, StringComparison.InvariantCultureIgnoreCase) && task.DesiredStatus != "STOPPED")
-                                                {
-                                                    Log.Information("Found task running that isn't tracked (probably from previous service)");
-                                                    // Found a running task for the queue while number of messages is 0
-                                                    _runningECSTasks.Add(queueUrl, task);
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Log.Error($"Unable to get task information for {taskArn}");
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Log.Error("Unable to get tasks from cluster");
-                                }
-                            }
-                            while(!string.IsNullOrEmpty(nextToken) && !_runningECSTasks.ContainsKey(queueUrl));
                         }
 
                         if(attributes.ApproximateNumberOfMessages >= Settings.MessageThreshold
@@ -281,14 +283,20 @@ namespace MessageDelivery
                     {
                         Log.Debug($"Checking {queueUrl} again in {Settings.QueueMessageCountCheckIfBlankInSeconds} seconds");
                         await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfBlankInSeconds * 1000).ConfigureAwait(false);
-                        MonitorQueue(queueUrl, false, token);
+                        MonitorQueue(queueUrl, token);
                     }
                     else
                     {
                         Log.Debug($"Checking {queueUrl} again in {Settings.QueueMessageCountCheckIfActiveInMinutes} minutes");
                         await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfActiveInMinutes * 60 * 1000).ConfigureAwait(false);
-                        MonitorQueue(queueUrl, false, token);
+                        MonitorQueue(queueUrl, token);
                     }
+                }
+                catch(Amazon.ECS.AmazonECSException ex)
+                {
+                    Log.Error(ex, $"Error while calling ECS {queueUrl}");
+                    await System.Threading.Tasks.Task.Delay(Settings.QueueMessageCountCheckIfBlankInSeconds * 1000 * 5).ConfigureAwait(false);
+                    MonitorQueue(queueUrl, token);
                 }
                 catch(Exception ex)
                 {
