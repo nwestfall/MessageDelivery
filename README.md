@@ -15,6 +15,8 @@ All the configuration is currently setup with Environment Variables.  This conta
  - `MD_AWS_KEY` (required) - AWS Key
  - `MD_AWS_SECRET` (required) - AWS Secret
  - `MD_AWS_REGION` (default: us-east-1) - AWS Region
+ - `MD_MIN_LOG_LEVEL` (default: 3) - A number from 0-5 (0 being VERBOSE, 5 being FATAL)
+ - `MD_JSON_LOGGING` (default: false) - If the logs should be in the json format (otherwise, standard text)
  - `MD_QUEUE_PREFIX` (default: "") - If you would only want to monitor FIFO queues with a certain prefix, define that prefix here
  - `MD_MESSAGE_THRESHOLD` (default: 1) - The number of messages that need to be in the queue before starting an ECS task
  - `MD_QUEUE_URL_REFRESH` (default: 30 minutes) - The number of minutes between getting a new list of queues.  This should be set very high unless you expect to be creating/deleting queues often
@@ -52,6 +54,6 @@ I have an EC2 ECS cluster running in AWS.  I then created a task definition for 
 
 ## Future Development
  - Have a web-based dashboard to see what you are monitoring and when tasks are started/stopped
- - Send notifications to SNS when a task is started/stopped or an exception occurs
+ - Send notifications to SNS when a task is started/stopped ~~or an exception occurs~~
  - Support more "dynamic" variables when using task overrides
- - Option to send logs to CloudWatch, including user-defined verbosity to better debug problems and provide auditing
+ - ~~Option to send logs to CloudWatch, including user-defined verbosity to better debug problems and provide auditing~~
