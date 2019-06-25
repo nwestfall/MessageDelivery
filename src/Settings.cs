@@ -15,6 +15,10 @@ namespace MessageDelivery
 
         public static RegionEndpoint AWSRegion { get; private set; } = RegionEndpoint.USEast1;
 
+        public static int MinimumLoggingLevel { get; private set; } = 3;
+
+        public static bool JsonFormatLogging { get; private set; } = false;
+
         public static int MessageThreshold { get; private set; } = 1;
 
         public static string QueuePrefix { get; private set; } = string.Empty;
@@ -42,6 +46,10 @@ namespace MessageDelivery
             var awsRegion = Environment.GetEnvironmentVariable("MD_AWS_REGION");
             if(!string.IsNullOrEmpty(awsRegion))
                 AWSRegion = RegionEndpoint.GetBySystemName(awsRegion);
+            if(int.TryParse(Environment.GetEnvironmentVariable("MD_MIN_LOG_LEVEL"), out int minimumLoggingLevel))
+                MinimumLoggingLevel = minimumLoggingLevel;
+            if(bool.TryParse(Environment.GetEnvironmentVariable("MD_JSON_LOGGING"), out bool jsonLogging))
+                JsonFormatLogging = jsonLogging;
             QueuePrefix = Environment.GetEnvironmentVariable("MD_QUEUE_PREFIX") ?? string.Empty;
             if(int.TryParse(Environment.GetEnvironmentVariable("MD_MESSAGE_THRESHOLD"), out int messageThreshold))
                 MessageThreshold = messageThreshold;
@@ -64,7 +72,8 @@ namespace MessageDelivery
                 throw new ArgumentNullException("MD_ECS_TASK_CONTAINER_NAME is required since MD_ECS_TASK_CONTAINER_ENVIRONMENT is set");
             
             // Parse environment variable
-            ParseEnvironmentVariables(environmentVariableOverrides);
+            if(!string.IsNullOrEmpty(environmentVariableOverrides))
+                ParseEnvironmentVariables(environmentVariableOverrides);
         }
 
         static void ParseEnvironmentVariables(string environmentVariableOverrides)
