@@ -150,7 +150,6 @@ namespace MessageDelivery
 
         static void MonitorQueue(string queueUrl, CancellationToken token)
         {
-            return;
             Log.Information($"Starting monitor for {queueUrl}");
             System.Threading.Tasks.Task.Factory.StartNew(async () =>
             {
