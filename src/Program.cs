@@ -95,7 +95,20 @@ namespace MessageDelivery
                                         {
                                             Log.Information("Found task running that isn't tracked (probably from previous service)");
                                             // Found a running task for the queue while number of messages is 0
-                                            possibleRunningQueues.Add(task.StartedBy, task);
+                                            if(!possibleRunningQueues.TryAdd(task.StartedBy, task))
+                                            {
+                                                Log.Warning($"Task {task.TaskArn} appears to be a duplicate (same StartedBy: {task.StartedBy}");
+                                                var stopTaskResponse = await _ecsClient.StopTaskAsync(new StopTaskRequest()
+                                                {
+                                                    Cluster = Settings.ECSClusterARN,
+                                                    Task = task.TaskArn,
+                                                    Reason = "Possible Duplicate"
+                                                }).ConfigureAwait(false);
+                                                if(stopTaskResponse.HttpStatusCode != HttpStatusCode.OK)
+                                                {
+                                                    Log.Error($"Unable to stop task {task.TaskArn} ({stopTaskResponse.HttpStatusCode}");
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -143,7 +156,8 @@ namespace MessageDelivery
                 }
                 catch(Exception ex)
                 {
-                    Log.Error(ex, "Error while monitoring queues");
+                    Log.Fatal(ex, "Error while monitoring queues");
+                    await System.Threading.Tasks.Task.Delay(10000).ConfigureAwait(false); // This is to make sure you are hitting the rate limit of the API if it fails early
                 }
             } while(true);
         }
