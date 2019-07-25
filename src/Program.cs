@@ -156,6 +156,10 @@ namespace MessageDelivery
                                         continue; // Don't monitor
                                     }
                                 }
+                                else
+                                {
+                                    Log.Error($"Unable to get check tags for queue ({queueUrl})");
+                                }
                             }
                             MonitorQueue(queueUrl, monitorCancellationToken.Token);
                         }
