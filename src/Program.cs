@@ -145,6 +145,18 @@ namespace MessageDelivery
                                 _runningECSTasks.Add(queueUrl, taskItem.Value);
                                 possibleRunningQueues.Remove(taskItem.Key);
                             }
+                            if(!string.IsNullOrEmpty(Settings.QueueTagToSkip))
+                            {
+                                var queueTags = await _sqsClient.ListQueueTagsAsync(new ListQueueTagsRequest() { QueueUrl = queueUrl }, monitorCancellationToken.Token);
+                                if(queueTags.HttpStatusCode == HttpStatusCode.OK)
+                                {
+                                    if(queueTags.Tags.ContainsKey(Settings.QueueTagToSkip))
+                                    {
+                                        Log.Information($"Queue ({queueUrl}) flagged to skip ({Settings.QueueTagToSkip})");
+                                        continue; // Don't monitor
+                                    }
+                                }
+                            }
                             MonitorQueue(queueUrl, monitorCancellationToken.Token);
                         }
                     }
