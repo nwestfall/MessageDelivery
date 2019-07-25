@@ -27,6 +27,7 @@ All the configuration is currently setup with Environment Variables.  This conta
  - `MD_ECS_TASK_LAUNCH` (default: EC2) - The launch type for the task definition (can be `EC2` or `Fargate`)
  - `MD_ECS_TASK_CONTAINER_ENVIRONMENT` (optional) - A json object (example below) of environment variables you want to set when the task is started
  - `MD_ECS_TASK_CONTAINER_NAME` (required only if `MD_ECS_TASK_CONTAINER_ENVIRONMENT` is set) - The name of the container you want to override with different environment variables 
+ - `MD_QUEUE_TAG_TO_SKIP` (optional) - "Key" value of the tag attached to the SQS Queue, where if present, will not be monitored
 
 ## Environment Variable Example
 You can override the list of environment variables for a task when a queue triggers it to start.  This can be helpful if you have settings specific to the queue.
