@@ -29,6 +29,8 @@ namespace MessageDelivery
 
         public static int QueueMessageCountCheckIfActiveInMinutes { get; private set; } = 5;
         
+        public static string QueueTagToSkip { get; private set; } = string.Empty;
+
         public static string ECSClusterARN { get; private set; }
 
         public static string ECSTaskDefinitionARN { get; private set; }
@@ -59,6 +61,7 @@ namespace MessageDelivery
                 QueueMessageCountCheckIfBlankInSeconds = queueBlankMessageCheck;
             if(int.TryParse(Environment.GetEnvironmentVariable("MD_QUEUE_ACTIVE_MESSAGE_REFRESH"), out int queueActiveMessageRefresh))
                 QueueMessageCountCheckIfActiveInMinutes = queueActiveMessageRefresh;
+            QueueTagToSkip = Environment.GetEnvironmentVariable("MD_QUEUE_TAG_TO_SKIP");
             ECSClusterARN = Environment.GetEnvironmentVariable("MD_ECS_CLUSTER_ARN") ?? throw new ArgumentNullException("MD_ECS_CLUSTER_ARN is required");
             ECSTaskDefinitionARN = Environment.GetEnvironmentVariable("MD_ECS_TASK_ARN") ?? throw new ArgumentNullException("MD_ECS_TASK_ARN is required");;
             var launchType = Environment.GetEnvironmentVariable("MD_ECS_TASK_LAUNCH");
