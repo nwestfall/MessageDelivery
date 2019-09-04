@@ -142,7 +142,8 @@ namespace MessageDelivery
                             if(possibleRunningQueues.Any(p => $"MDS-{queueName}".StartsWith(p.Key)))
                             {
                                 var taskItem = possibleRunningQueues.FirstOrDefault(p => $"MDS-{queueName}".StartsWith(p.Key));
-                                _runningECSTasks.Add(queueUrl, taskItem.Value);
+                                if(!_runningECSTasks.TryAdd(queueUrl, taskItem.Value))
+                                    Log.Information($"We already know a task is running for MDS-{queueName}");
                                 possibleRunningQueues.Remove(taskItem.Key);
                             }
                             if(!string.IsNullOrEmpty(Settings.QueueTagToSkip))
