@@ -3,6 +3,7 @@ using System.Net;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -25,7 +26,7 @@ namespace MessageDelivery
 
         static IAmazonECS _ecsClient;
 
-        static IDictionary<string, Amazon.ECS.Model.Task> _runningECSTasks = new Dictionary<string, Amazon.ECS.Model.Task>();
+        static IDictionary<string, Amazon.ECS.Model.Task> _runningECSTasks = new ConcurrentDictionary<string, Amazon.ECS.Model.Task>();
 
         static readonly List<string> _desiredAttributes = new List<string> { "ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible" };
 
