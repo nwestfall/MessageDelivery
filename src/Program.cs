@@ -62,7 +62,7 @@ namespace MessageDelivery
                         Console.WriteLine($"Got {queues.QueueUrls.Count} queues");
                         var fifoQueues = queues.QueueUrls.Where(u => u.EndsWith(".fifo")).ToList();
                         Console.WriteLine($"{fifoQueues.Count} are going to be monitored (the rest aren't FIFO queues)");
-                        foreach(var queueUrl in queues.QueueUrls)
+                        foreach(var queueUrl in fifoQueues)
                         {
                             MonitorQueue(queueUrl, monitorCancellationToken.Token);
                         }
