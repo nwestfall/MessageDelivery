@@ -133,8 +133,8 @@ namespace MessageDelivery
                     {
                         Log.Information($"Got {queues.QueueUrls.Count} queues");
                         var fifoQueues = queues.QueueUrls.Where(u => u.EndsWith(".fifo")).ToList();
-                        Log.Debug($"{fifoQueues.Count} are going to be monitored (the rest aren't FIFO queues)");
-                        foreach(var queueUrl in queues.QueueUrls)
+                        Console.WriteLine($"{fifoQueues.Count} are going to be monitored (the rest aren't FIFO queues)");
+                        foreach(var queueUrl in fifoQueues)
                         {
                             // Get name
                             string queueName = string.Empty;
