@@ -52,12 +52,12 @@ namespace MessageDelivery
             Log.Verbose("\n\nLet's get started!");
 
             // Wire up ECS
-            var ecsClient = new AmazonECSClient(Settings.AWSKey, Settings.AWSSecret, Settings.AWSRegion);
+            var ecsClient = (!string.IsNullOrEmpty(Settings.AWSKey) && !string.IsNullOrEmpty(Settings.AWSSecret)) ? new AmazonECSClient(Settings.AWSKey, Settings.AWSSecret, Settings.AWSRegion) : new AmazonECSClient(Settings.AWSRegion);
             ecsClient.ExceptionEvent += AmazonClient_ExceptionEvent;
             _ecsClient = ecsClient;
 
             // Wire up SQS
-            var sqsClient = new AmazonSQSClient(Settings.AWSKey, Settings.AWSSecret, Settings.AWSRegion);
+            var sqsClient = (!string.IsNullOrEmpty(Settings.AWSKey) && !string.IsNullOrEmpty(Settings.AWSSecret)) ? new AmazonSQSClient(Settings.AWSKey, Settings.AWSSecret, Settings.AWSRegion) : new AmazonSQSClient(Settings.AWSRegion);
             sqsClient.ExceptionEvent += AmazonClient_ExceptionEvent;
             _sqsClient = sqsClient;
 

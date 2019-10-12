@@ -12,8 +12,8 @@ Once the image is running, it will monitor up to 1000 FIFO SQS queues.  If at an
 ## Configuration
 All the configuration is currently setup with Environment Variables.  This container is designed to run in ECS, so this should be an easy 1 tmie setup.
 
- - `MD_AWS_KEY` (required) - AWS Key
- - `MD_AWS_SECRET` (required) - AWS Secret
+ - `MD_AWS_KEY` - AWS Key (will look for local role if not provided)
+ - `MD_AWS_SECRET` - AWS Secret (will look for local role if not provided)
  - `MD_AWS_REGION` (default: us-east-1) - AWS Region
  - `MD_MIN_LOG_LEVEL` (default: 3) - A number from 0-5 (0 being VERBOSE, 5 being FATAL)
  - `MD_JSON_LOGGING` (default: false) - If the logs should be in the json format (otherwise, standard text)

@@ -43,8 +43,8 @@ namespace MessageDelivery
 
         public static void LoadSettings()
         {
-            AWSKey = Environment.GetEnvironmentVariable("MD_AWS_KEY") ?? throw new ArgumentNullException("MD_AWS_KEY is required");
-            AWSSecret = Environment.GetEnvironmentVariable("MD_AWS_SECRET") ?? throw new ArgumentNullException("MD_AWS_SECRET is required");
+            AWSKey = Environment.GetEnvironmentVariable("MD_AWS_KEY");
+            AWSSecret = Environment.GetEnvironmentVariable("MD_AWS_SECRET");
             var awsRegion = Environment.GetEnvironmentVariable("MD_AWS_REGION");
             if(!string.IsNullOrEmpty(awsRegion))
                 AWSRegion = RegionEndpoint.GetBySystemName(awsRegion);
@@ -83,19 +83,22 @@ namespace MessageDelivery
         {
             // ? Format - ENV_VARIABLE=VALUE:OTHER_ENV_VARIABLE=OTHER_VALUE
             var environmentDictionary = new Dictionary<string, string>();
-            var parts = Regex.Matches(environmentVariableOverrides, "'(.+?)'|[^:]+");
-            if(parts.Count == 0)
-                throw new ArgumentException("MD_ECS_TASK_CONTAINER_ENVIRONMENT is formatted incorrectly");
-            for(var i = 0; i < parts.Count; i++)
+            if(!string.IsNullOrEmpty(environmentVariableOverrides))
             {
-                var part = parts[i];
-                var variables = Regex.Matches(GetCorrectMatch(ref part), "\"(.+?)\"|[^=]+");
-                if(variables.Count > 2)
+                var parts = Regex.Matches(environmentVariableOverrides, "'(.+?)'|[^:]+");
+                if(parts.Count == 0)
                     throw new ArgumentException("MD_ECS_TASK_CONTAINER_ENVIRONMENT is formatted incorrectly");
-                var key = variables[0];
-                var val = variables[1];
-                if(!environmentDictionary.TryAdd(GetCorrectMatch(ref key), GetCorrectMatch(ref val)))
-                    throw new ArgumentException("Environment Variable already defined in overrides");
+                for(var i = 0; i < parts.Count; i++)
+                {
+                    var part = parts[i];
+                    var variables = Regex.Matches(GetCorrectMatch(ref part), "\"(.+?)\"|[^=]+");
+                    if(variables.Count > 2)
+                        throw new ArgumentException("MD_ECS_TASK_CONTAINER_ENVIRONMENT is formatted incorrectly");
+                    var key = variables[0];
+                    var val = variables[1];
+                    if(!environmentDictionary.TryAdd(GetCorrectMatch(ref key), GetCorrectMatch(ref val)))
+                        throw new ArgumentException("Environment Variable already defined in overrides");
+                }
             }
 
             ECSTaskEnvironmentVariableOverride = environmentDictionary;
