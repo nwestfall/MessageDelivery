@@ -12,8 +12,8 @@ Once the image is running, it will monitor up to 1000 FIFO SQS queues.  If at an
 ## Configuration
 All the configuration is currently setup with Environment Variables.  This container is designed to run in ECS, so this should be an easy 1 tmie setup.
 
- - `MD_AWS_KEY` (required) - AWS Key
- - `MD_AWS_SECRET` (required) - AWS Secret
+ - `MD_AWS_KEY` - AWS Key (will look for local role if not provided)
+ - `MD_AWS_SECRET` - AWS Secret (will look for local role if not provided)
  - `MD_AWS_REGION` (default: us-east-1) - AWS Region
  - `MD_QUEUE_PREFIX` (default: "") - If you would only want to monitor FIFO queues with a certain prefix, define that prefix here
  - `MD_MESSAGE_THRESHOLD` (default: 1) - The number of messages that need to be in the queue before starting an ECS task
