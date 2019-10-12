@@ -8,8 +8,8 @@
   <ItemGroup>
     <PackageReference Include="AWS.Logger.AspNetCore" Version="1.4.1" />
     <PackageReference Include="AWSSDK.SQS" Version="3.3.100.20" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.0" />
   </ItemGroup>
 
 </Project>
