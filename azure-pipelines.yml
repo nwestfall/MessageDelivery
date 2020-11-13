@@ -27,5 +27,5 @@ stages:
         repository: 'nwestfall/messagedelivery'
         command: 'buildAndPush'
         Dockerfile: '**/Dockerfile'
-        tags: '$(tag)'
+        tags: 'latest'
     
