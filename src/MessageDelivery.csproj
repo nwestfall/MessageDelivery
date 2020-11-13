@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ECS" Version="3.3.102.2" />
-    <PackageReference Include="AWSSDK.SQS" Version="3.3.100.15" />
+    <PackageReference Include="AWSSDK.ECS" Version="3.5.1" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.5.0.36" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
   </ItemGroup>
 
